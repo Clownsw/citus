@@ -19,6 +19,7 @@
 #include "distributed/pg_version_constants.h"
 
 #include <time.h>
+#include <executor/spi.h>
 
 #include "miscadmin.h"
 #include "pgstat.h"
@@ -32,6 +33,7 @@
 #include "commands/extension.h"
 #include "libpq/pqsignal.h"
 #include "catalog/namespace.h"
+#include "distributed/background_jobs.h"
 #include "distributed/citus_safe_lib.h"
 #include "distributed/distributed_deadlock_detection.h"
 #include "distributed/maintenanced.h"
@@ -40,6 +42,7 @@
 #include "distributed/shard_cleaner.h"
 #include "distributed/metadata_sync.h"
 #include "distributed/query_stats.h"
+#include "distributed/repair_shards.h"
 #include "distributed/statistics_collection.h"
 #include "distributed/transaction_recovery.h"
 #include "distributed/version_compat.h"
@@ -54,6 +57,7 @@
 #include "storage/lwlock.h"
 #include "tcop/tcopprot.h"
 #include "common/hashfn.h"
+#include "utils/builtins.h"
 #include "utils/memutils.h"
 #include "utils/lsyscache.h"
 
@@ -93,6 +97,7 @@ typedef struct MaintenanceDaemonDBData
 double DistributedDeadlockDetectionTimeoutFactor = 2.0;
 int Recover2PCInterval = 60000;
 int DeferShardDeleteInterval = 15000;
+int RebalanceCheckInterval = 1000;
 
 /* config variables for metadata sync timeout */
 int MetadataSyncInterval = 60000;
@@ -119,7 +124,6 @@ static void MaintenanceDaemonShmemExit(int code, Datum arg);
 static void MaintenanceDaemonErrorContext(void *arg);
 static bool MetadataSyncTriggeredCheckAndReset(MaintenanceDaemonDBData *dbData);
 static void WarnMaintenanceDaemonNotStarted(void);
-
 
 /*
  * InitializeMaintenanceDaemon, called at server start, is responsible for
@@ -277,12 +281,14 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 	TimestampTz nextStatsCollectionTime USED_WITH_LIBCURL_ONLY =
 		TimestampTzPlusMilliseconds(GetCurrentTimestamp(), 60 * 1000);
 	bool retryStatsCollection USED_WITH_LIBCURL_ONLY = false;
-	ErrorContextCallback errorCallback;
 	TimestampTz lastRecoveryTime = 0;
 	TimestampTz lastShardCleanTime = 0;
 	TimestampTz lastStatStatementsPurgeTime = 0;
 	TimestampTz nextMetadataSyncTime = 0;
 
+	/* state kept for the reabalance check */
+	TimestampTz lastRebalanceCheck = 0;
+	BackgroundWorkerHandle *rebalanceBgwHandle = NULL;
 
 	/*
 	 * We do metadata sync in a separate background worker. We need its
@@ -354,6 +360,7 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 	 * Do so before setting up signals etc, so we never exit without the
 	 * context setup.
 	 */
+	ErrorContextCallback errorCallback = { 0 };
 	memset(&errorCallback, 0, sizeof(errorCallback));
 	errorCallback.callback = MaintenanceDaemonErrorContext;
 	errorCallback.arg = (void *) myDbData;
@@ -681,6 +688,65 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 
 			/* make sure we don't wait too long, need to convert seconds to milliseconds */
 			timeout = Min(timeout, (StatStatementsPurgeInterval * 1000));
+		}
+
+		pid_t rebalanceWorkerPid = 0;
+		BgwHandleStatus rebalanceWorkerStatus =
+			rebalanceBgwHandle != NULL ?
+			GetBackgroundWorkerPid(rebalanceBgwHandle, &rebalanceWorkerPid) :
+			BGWH_STOPPED;
+		if (TimestampDifferenceExceeds(lastRebalanceCheck, GetCurrentTimestamp(),
+									   RebalanceCheckInterval) &&
+			rebalanceWorkerStatus == BGWH_STOPPED)
+		{
+			/* clear old background worker for rebalancing before checking for new jobs */
+			if (rebalanceBgwHandle)
+			{
+				TerminateBackgroundWorker(rebalanceBgwHandle);
+				pfree(rebalanceBgwHandle);
+				rebalanceBgwHandle = NULL;
+			}
+
+			StartTransactionCommand();
+
+			bool shouldStartRebalanceJobsBackgroundWorker = false;
+			if (!LockCitusExtension())
+			{
+				ereport(DEBUG1, (errmsg("could not lock the citus extension, "
+										"skipping stat statements purging")));
+			}
+			else if (CheckCitusVersion(DEBUG1) && CitusHasBeenLoaded())
+			{
+				/* perform catalog precheck */
+				shouldStartRebalanceJobsBackgroundWorker = HasRunnableBackgroundTask();
+			}
+
+			CommitTransactionCommand();
+
+			if (shouldStartRebalanceJobsBackgroundWorker)
+			{
+				/* spawn background worker */
+				ereport(LOG, (errmsg("found scheduled job waiting for rebalance. "
+									 "Starting background worker for execution.")));
+
+				rebalanceBgwHandle =
+					StartCitusBackgroundTaskMonitorWorker(MyDatabaseId,
+														  myDbData->userOid);
+
+				if (!rebalanceBgwHandle ||
+					GetBackgroundWorkerPid(rebalanceBgwHandle, &rebalanceWorkerPid) ==
+					BGWH_STOPPED)
+				{
+					ereport(WARNING, (errmsg("unable to start background worker for "
+											 "rebalance jobs")));
+
+					/* todo cooldown timer */
+				}
+			}
+
+			/* interval management */
+			lastRebalanceCheck = GetCurrentTimestamp();
+			timeout = Min(timeout, RebalanceCheckInterval);
 		}
 
 		/*
