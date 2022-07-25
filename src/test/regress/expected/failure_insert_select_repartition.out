@@ -56,8 +56,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="worker_partition_query_result").kill
 
 INSERT INTO target_table SELECT * FROM source_table;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT * FROM target_table ORDER BY a;
  a | b
 ---------------------------------------------------------------------
@@ -71,8 +69,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="worker_partition_query_result").kill
 
 INSERT INTO target_table SELECT * FROM replicated_source_table;
 WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT * FROM target_table ORDER BY a;
  a  |  b
 ---------------------------------------------------------------------
@@ -102,8 +98,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="fetch_intermediate_results").kill()'
 
 INSERT INTO target_table SELECT * FROM source_table;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT * FROM target_table ORDER BY a;
  a | b
 ---------------------------------------------------------------------
@@ -117,8 +111,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="fetch_intermediate_results").kill()'
 
 INSERT INTO target_table SELECT * FROM replicated_source_table;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT * FROM target_table ORDER BY a;
  a | b
 ---------------------------------------------------------------------
@@ -137,8 +129,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="read_intermediate_results").kill()')
 
 INSERT INTO target_table SELECT * FROM source_table;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT * FROM target_table ORDER BY a;
  a | b
 ---------------------------------------------------------------------
@@ -152,8 +142,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="read_intermediate_results").kill()')
 
 INSERT INTO target_table SELECT * FROM replicated_source_table;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT * FROM target_table ORDER BY a;
  a | b
 ---------------------------------------------------------------------
@@ -171,8 +159,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="read_intermediate_results").kill()')
 
 INSERT INTO replicated_target_table SELECT * FROM source_table;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT * FROM replicated_target_table;
  a | b
 ---------------------------------------------------------------------

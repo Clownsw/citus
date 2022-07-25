@@ -28,8 +28,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="^INSERT").kill()');
 
 INSERT INTO mod_test VALUES (2, 6);
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT COUNT(*) FROM mod_test WHERE key=2;
  count
 ---------------------------------------------------------------------
@@ -62,8 +60,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="^UPDATE").kill()');
 
 UPDATE mod_test SET value='ok' WHERE key=2 RETURNING key;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT COUNT(*) FROM mod_test WHERE value='ok';
  count
 ---------------------------------------------------------------------
@@ -94,8 +90,6 @@ INSERT INTO mod_test VALUES (2, 7);
 DELETE FROM mod_test WHERE key=2 AND value = '7';
 UPDATE mod_test SET value='ok' WHERE key=2;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 COMMIT;
 SELECT COUNT(*) FROM mod_test WHERE key=2;
  count

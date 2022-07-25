@@ -117,8 +117,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="^COPY").kill()');
 
 \copy test_table FROM STDIN DELIMITER ','
 ERROR:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 CONTEXT:  while executing command on localhost:xxxxx
 COPY test_table, line 1: "1,2"
 SELECT citus.mitmproxy('conn.allow()');
@@ -231,8 +229,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="FROM STDIN WITH").killall()');
 
 \copy test_table FROM STDIN DELIMITER ','
 ERROR:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 CONTEXT:  while executing command on localhost:xxxxx
 COPY test_table, line 1: "1,2"
 SELECT citus.mitmproxy('conn.allow()');
@@ -262,9 +258,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="^PREPARE TRANSACTION").kill()');
 
 \copy test_table FROM STDIN DELIMITER ','
 ERROR:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
-connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -396,9 +389,6 @@ SET LOCAL client_min_messages TO WARNING;
 \copy test_table FROM STDIN DELIMITER ','
 ROLLBACK;
 WARNING:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
-connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -432,9 +422,6 @@ SET LOCAL client_min_messages TO WARNING;
 \copy test_table FROM STDIN DELIMITER ','
 ROLLBACK;
 WARNING:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
-connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy

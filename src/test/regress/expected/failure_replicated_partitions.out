@@ -29,8 +29,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="^INSERT").kill()');
 
 INSERT INTO partitioned_table VALUES (0, 0);
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 -- use both placements
 SET citus.task_assignment_policy TO "round-robin";
 -- the results should be the same

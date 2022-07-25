@@ -26,8 +26,6 @@ SELECT citus.mitmproxy('conn.onQuery().kill()');
 
 SELECT create_reference_table('ref_table');
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT count(*) FROM pg_dist_shard_placement;
  count
 ---------------------------------------------------------------------
@@ -43,8 +41,6 @@ SELECT citus.mitmproxy('conn.onCommandComplete(command="BEGIN").kill()');
 
 SELECT create_reference_table('ref_table');
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT count(*) FROM pg_dist_shard_placement;
  count
 ---------------------------------------------------------------------
@@ -75,8 +71,6 @@ SELECT citus.mitmproxy('conn.onCommandComplete(command="SELECT 1").kill()');
 
 SELECT create_reference_table('ref_table');
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 SELECT count(*) FROM pg_dist_shard_placement;
  count
 ---------------------------------------------------------------------
@@ -148,9 +142,6 @@ SELECT citus.mitmproxy('conn.onCommandComplete(command="PREPARE TRANSACTION").ki
 
 SELECT create_reference_table('ref_table');
 ERROR:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
-connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT count(*) FROM pg_dist_shard_placement;
  count
@@ -208,8 +199,6 @@ SELECT citus.mitmproxy('conn.onQuery().kill()');
 BEGIN;
 SELECT create_reference_table('ref_table');
 WARNING:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 CONTEXT:  while executing command on localhost:xxxxx
 ERROR:  failure on connection marked as essential: localhost:xxxxx
 COMMIT;
@@ -233,9 +222,6 @@ HINT:  To remove the local data, run: SELECT truncate_local_data_after_distribut
 
 ROLLBACK;
 WARNING:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
-connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT * FROM pg_dist_shard_placement ORDER BY shardid, nodeport;
  shardid | shardstate | shardlength | nodename | nodeport | placementid

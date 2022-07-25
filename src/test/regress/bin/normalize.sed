@@ -269,3 +269,12 @@ s/^(DETAIL:  "[a-z\ ]+ )pg_temp_[0-9]+(\..*" will be created only locally)$/\1pg
 # will be replaced with
 #   WARNING:  "function func(bigint)" has dependency on unsupported object "schema pg_temp_xxx"
 s/^(WARNING|ERROR)(:  "[a-z\ ]+ .*" has dependency on unsupported object) "schema pg_temp_[0-9]+"$/\1\2 "schema pg_temp_xxx"/g
+
+
+/(ERROR: |WARNING: |error:) server closed the connection unexpectedly/ {
+	N; s/\s*This probably means the server terminated abnormally//g
+	N; s/\s*before or while processing the request.//g
+	N; s/\s*connection not open//g
+}
+
+# s/(ERROR: |WARNING: |error:) server closed the connection unexpectedly/\1 connection not open/g

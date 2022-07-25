@@ -31,8 +31,6 @@ SELECT citus.mitmproxy('conn.onQuery(query="^SELECT").kill()');
 
 SELECT * FROM select_test WHERE key = 3;
 WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
  key |   value
 ---------------------------------------------------------------------
    3 | test data
@@ -40,8 +38,6 @@ WARNING:  connection to the remote node localhost:xxxxx failed with the followin
 
 SELECT * FROM select_test WHERE key = 3;
 WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
  key |   value
 ---------------------------------------------------------------------
    3 | test data
@@ -59,8 +55,6 @@ BEGIN;
 INSERT INTO select_test VALUES (3, 'more data');
 SELECT * FROM select_test WHERE key = 3;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 COMMIT;
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -149,8 +143,6 @@ SELECT * FROM select_test WHERE key = 3;
 INSERT INTO select_test VALUES (3, 'even more data');
 SELECT * FROM select_test WHERE key = 3;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 COMMIT;
 SELECT citus.mitmproxy('conn.onQuery(query="^SELECT").after(2).kill()');
  mitmproxy
@@ -166,8 +158,6 @@ SELECT recover_prepared_transactions();
 
 SELECT recover_prepared_transactions();
 ERROR:  server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 CONTEXT:  while executing command on localhost:xxxxx
 -- bug from https://github.com/citusdata/citus/issues/1926
 SET citus.max_cached_conns_per_worker TO 0; -- purge cache
@@ -197,8 +187,6 @@ SELECT * FROM select_test WHERE key = 1;
 
 SELECT * FROM select_test WHERE key = 1;
 ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
 -- now the same test with query cancellation
 SELECT citus.mitmproxy('conn.onQuery(query="^SELECT").after(1).cancel(' ||  pg_backend_pid() || ')');
  mitmproxy
