@@ -38,25 +38,18 @@ SELECT citus.mitmproxy('conn.onQuery(query="^SAVEPOINT").kill()');
 BEGIN;
 INSERT INTO artists VALUES (5, 'Asher Lev');
 SAVEPOINT s1;
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
+WARNING:  connection not open
 connection not open
 connection not open
 connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
+WARNING:  connection not open
 connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 DELETE FROM artists WHERE id=4;
 ERROR:  current transaction is aborted, commands ignored until end of transaction block
@@ -82,27 +75,20 @@ SAVEPOINT s1;
 DELETE FROM artists WHERE id=4;
 RELEASE SAVEPOINT s1;
 WARNING:  AbortSubTransaction while in COMMIT state
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
+WARNING:  connection not open
 connection not open
 connection not open
 connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
+WARNING:  connection not open
 connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 WARNING:  savepoint "savepoint_2" does not exist
 CONTEXT:  while executing command on localhost:xxxxx
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 ROLLBACK;
 SELECT * FROM artists WHERE id IN (4, 5);
@@ -123,10 +109,9 @@ INSERT INTO artists VALUES (5, 'Asher Lev');
 SAVEPOINT s1;
 DELETE FROM artists WHERE id=4;
 ROLLBACK TO SAVEPOINT s1;
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  server closed the connection unexpectedly
-connection not open
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 COMMIT;
 ERROR:  failure on connection marked as essential: localhost:xxxxx
@@ -151,25 +136,18 @@ SAVEPOINT s2;
 INSERT INTO artists VALUES (5, 'Jacob Kahn');
 RELEASE SAVEPOINT s2;
 WARNING:  AbortSubTransaction while in COMMIT state
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
+WARNING:  connection not open
 connection not open
 connection not open
 connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
+WARNING:  connection not open
 connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 COMMIT;
 SELECT * FROM artists WHERE id IN (4, 5);
@@ -192,10 +170,9 @@ ROLLBACK TO SAVEPOINT s1;
 SAVEPOINT s2;
 DELETE FROM artists WHERE id=5;
 ROLLBACK TO SAVEPOINT s2;
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  server closed the connection unexpectedly
-connection not open
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 COMMIT;
 ERROR:  failure on connection marked as essential: localhost:xxxxx
@@ -242,26 +219,16 @@ INSERT INTO artists VALUES (6, 'John J. Audubon');
 INSERT INTO artists VALUES (7, 'Emily Carr');
 INSERT INTO artists VALUES (7, 'Emily Carr');
 ROLLBACK TO SAVEPOINT s1;
-WARNING:  server closed the connection unexpectedly
-WARNING:  server closed the connection unexpectedly
-connection not open
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
-WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+WARNING:  connection not open
+WARNING:  connection not open
+WARNING:  connection not open
 connection not open
 connection not open
 connection not open
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
+WARNING:  connection not open
 connection not open
-connection not open
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
+WARNING:  connection not open
 connection not open
 connection not open
 COMMIT;
@@ -295,22 +262,14 @@ SELECT citus.mitmproxy('conn.onQuery(query="^SAVEPOINT").kill()');
 BEGIN;
 INSERT INTO researchers VALUES (7, 4, 'Jan Plaza');
 SAVEPOINT s1;
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
+WARNING:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 connection not open
 connection not open
-WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+WARNING:  connection not open
+WARNING:  connection not open
 connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
-connection not open
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 INSERT INTO researchers VALUES (8, 4, 'Alonzo Church');
 ERROR:  current transaction is aborted, commands ignored until end of transaction block
 ROLLBACK TO s1;
@@ -345,9 +304,8 @@ INSERT INTO researchers VALUES (7, 4, 'Jan Plaza');
 SAVEPOINT s1;
 INSERT INTO researchers VALUES (8, 4, 'Alonzo Church');
 ROLLBACK TO s1;
-WARNING:  server closed the connection unexpectedly
-WARNING:  server closed the connection unexpectedly
-connection not open
+WARNING:  connection not open
+WARNING:  connection not open
 RELEASE SAVEPOINT s1;
 COMMIT;
 ERROR:  failure on connection marked as essential: localhost:xxxxx
@@ -380,23 +338,15 @@ INSERT INTO researchers VALUES (8, 4, 'Alonzo Church');
 ROLLBACK TO s1;
 RELEASE SAVEPOINT s1;
 WARNING:  AbortSubTransaction while in COMMIT state
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
+WARNING:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 connection not open
 connection not open
-WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
+WARNING:  connection not open
+WARNING:  connection not open
 connection not open
 WARNING:  savepoint "savepoint_3" does not exist
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 COMMIT;
 -- should see correct results from healthy placement and one bad placement
 SELECT * FROM researchers WHERE lab_id = 4;
@@ -437,31 +387,17 @@ SELECT * FROM ref;
 (1 row)
 
 ROLLBACK TO SAVEPOINT start;
-WARNING:  server closed the connection unexpectedly
-WARNING:  server closed the connection unexpectedly
-connection not open
+WARNING:  connection not open
+WARNING:  connection not open
 SELECT * FROM ref;
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
+WARNING:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
+WARNING:  connection not open
+connection not open
+WARNING:  connection not open
 connection not open
 connection not open
-connection not open
-WARNING:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
-connection not open
-WARNING:  server closed the connection unexpectedly
-connection not open
-connection not open
-connection not open
-connection not open
-connection not open
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
-connection not open
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 END;
 -- clean up
 SELECT citus.mitmproxy('conn.allow()');

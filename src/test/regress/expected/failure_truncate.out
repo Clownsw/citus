@@ -43,7 +43,7 @@ SELECT citus.mitmproxy('conn.onAuthenticationOk().kill()');
 (1 row)
 
 TRUNCATE test_table;
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
 ---------------------------------------------------------------------
@@ -152,7 +152,7 @@ SELECT citus.mitmproxy('conn.onQuery(query="TRUNCATE TABLE truncate_failure.test
 (1 row)
 
 TRUNCATE test_table;
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
 ---------------------------------------------------------------------
@@ -277,16 +277,16 @@ SELECT citus.mitmproxy('conn.onCommandComplete(command="^COMMIT").kill()');
 (1 row)
 
 TRUNCATE test_table;
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 WARNING:  failed to commit transaction on localhost:xxxxx
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
 connection not open
 CONTEXT:  while executing command on localhost:xxxxx
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 WARNING:  failed to commit transaction on localhost:xxxxx
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
 connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
@@ -358,7 +358,7 @@ SELECT citus.mitmproxy('conn.onQuery(query="PREPARE TRANSACTION").kill()');
 (1 row)
 
 TRUNCATE reference_table CASCADE;
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -427,7 +427,7 @@ SELECT citus.mitmproxy('conn.onQuery(query="^TRUNCATE TABLE").after(2).kill()');
 (1 row)
 
 TRUNCATE reference_table CASCADE;
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
 ---------------------------------------------------------------------
@@ -496,7 +496,7 @@ SELECT citus.mitmproxy('conn.onCommandComplete(command="PREPARE TRANSACTION").ki
 (1 row)
 
 TRUNCATE reference_table CASCADE;
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -566,7 +566,7 @@ SELECT citus.mitmproxy('conn.onAuthenticationOk().kill()');
 (1 row)
 
 TRUNCATE test_table;
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
 ---------------------------------------------------------------------
@@ -675,7 +675,7 @@ SELECT citus.mitmproxy('conn.onQuery(query="^TRUNCATE TABLE truncate_failure.tes
 (1 row)
 
 TRUNCATE test_table;
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
 ---------------------------------------------------------------------
@@ -729,7 +729,7 @@ SELECT citus.mitmproxy('conn.onCommandComplete(command="^PREPARE TRANSACTION").k
 (1 row)
 
 TRUNCATE test_table;
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -935,7 +935,7 @@ SELECT citus.mitmproxy('conn.onAuthenticationOk().kill()');
 (1 row)
 
 TRUNCATE test_table;
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
 ---------------------------------------------------------------------
@@ -1044,7 +1044,7 @@ SELECT citus.mitmproxy('conn.onQuery(query="TRUNCATE TABLE truncate_failure.test
 (1 row)
 
 TRUNCATE test_table;
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
 ---------------------------------------------------------------------
@@ -1098,7 +1098,7 @@ SELECT citus.mitmproxy('conn.onCommandComplete(command="PREPARE TRANSACTION").ki
 (1 row)
 
 TRUNCATE test_table;
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy

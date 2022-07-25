@@ -277,4 +277,4 @@ s/^(WARNING|ERROR)(:  "[a-z\ ]+ .*" has dependency on unsupported object) "schem
 	N; s/\s*connection not open//g
 }
 
-# s/(ERROR: |WARNING: |error:) server closed the connection unexpectedly/\1 connection not open/g
+s/(ERROR: |WARNING: |error:) server closed the connection unexpectedly/\1 connection not open/g

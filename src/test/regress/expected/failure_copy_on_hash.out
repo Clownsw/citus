@@ -36,7 +36,7 @@ SELECT citus.mitmproxy('conn.kill()');
 (1 row)
 
 \COPY test_table FROM stdin delimiter ',';
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 CONTEXT:  COPY test_table, line 1: "1,2"
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -173,7 +173,7 @@ SELECT citus.mitmproxy('conn.onQuery(query="PREPARE TRANSACTION").kill()');
 (1 row)
 
 \COPY test_table FROM stdin delimiter ',';
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -233,7 +233,7 @@ SELECT citus.mitmproxy('conn.onQuery(query="ROLLBACK").kill()');
 BEGIN;
 \COPY test_table FROM stdin delimiter ',';
 ROLLBACK;
-WARNING:  server closed the connection unexpectedly
+WARNING:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
@@ -271,7 +271,7 @@ SELECT citus.mitmproxy('conn.kill()');
 (1 row)
 
 \COPY test_table_2 FROM stdin delimiter ',';
-ERROR:  connection to the remote node localhost:xxxxx failed with the following error: server closed the connection unexpectedly
+ERROR:  connection to the remote node localhost:xxxxx failed with the following error: connection not open
 SELECT citus.mitmproxy('conn.allow()');
  mitmproxy
 ---------------------------------------------------------------------
@@ -314,7 +314,7 @@ SELECT citus.mitmproxy('conn.onQuery(query="FROM STDIN WITH").killall()');
 (1 row)
 
 \COPY test_table_2 FROM stdin delimiter ',';
-ERROR:  server closed the connection unexpectedly
+ERROR:  connection not open
 CONTEXT:  while executing command on localhost:xxxxx
 COPY test_table_2, line 1: "1,2"
 SELECT citus.mitmproxy('conn.allow()');
