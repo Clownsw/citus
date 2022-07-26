@@ -269,3 +269,5 @@ s/^(DETAIL:  "[a-z\ ]+ )pg_temp_[0-9]+(\..*" will be created only locally)$/\1pg
 # will be replaced with
 #   WARNING:  "function func(bigint)" has dependency on unsupported object "schema pg_temp_xxx"
 s/^(WARNING|ERROR)(:  "[a-z\ ]+ .*" has dependency on unsupported object) "schema pg_temp_[0-9]+"$/\1\2 "schema pg_temp_xxx"/g
+
+s/SSL connection has been closed unexpectedly/FATAL:  terminating connection due to administrator command\nserver closed the connection unexpectedly\n	This probably means the server terminated abnormally\n	before or while processing the request./g
