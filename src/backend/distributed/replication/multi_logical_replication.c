@@ -85,8 +85,8 @@ bool PlacementMovedUsingLogicalReplicationInTX = false;
 static int logicalReplicationProgressReportTimeout = 10 * 1000;
 
 
-static void CreateForeignConstraintsToReferenceTable(List *shardList,
-													 MultiConnection *targetConnection);
+static void CreateForeignKeyConstraints(List *shardList,
+										MultiConnection *targetConnection);
 static List * PrepareReplicationSubscriptionList(List *shardList);
 static Bitmapset * TableOwnerIds(List *shardList);
 static List * GetReplicaIdentityCommandListForShard(Oid relationId, uint64 shardId);
@@ -112,8 +112,6 @@ static void ExecuteRemainingPostLoadTableCommands(List *shardList, char *targetN
 												  int targetNodePort);
 static void CreatePartitioningHierarchy(List *shardList, char *targetNodeName,
 										int targetNodePort);
-static void CreateColocatedForeignKeys(List *shardList, char *targetNodeName,
-									   int targetNodePort);
 static void DropShardMovePublications(MultiConnection *connection,
 									  Bitmapset *tableOwnerIds);
 static void DropShardMoveSubscriptions(MultiConnection *connection,
@@ -294,7 +292,7 @@ LogicallyReplicateShards(List *shardList, char *sourceNodeName, int sourceNodePo
 		 * cascade to the hash distributed tables' shards if we had created
 		 * the constraints earlier.
 		 */
-		CreateForeignConstraintsToReferenceTable(shardList, targetConnection);
+		CreateForeignKeyConstraints(shardList, targetConnection);
 
 		/* we're done, cleanup the publication and subscription */
 		DropShardMoveSubscriptions(targetConnection, tableOwnerIds);
@@ -623,9 +621,6 @@ CreatePostLogicalReplicationDataLoadObjects(List *shardList, char *targetNodeNam
 
 	/* create partitioning hierarchy, if any */
 	CreatePartitioningHierarchy(shardList, targetNodeName, targetNodePort);
-
-	/* create colocated foreign keys, if any */
-	CreateColocatedForeignKeys(shardList, targetNodeName, targetNodePort);
 }
 
 
@@ -977,61 +972,11 @@ CreatePartitioningHierarchy(List *shardList, char *targetNodeName, int targetNod
 
 
 /*
- * CreateColocatedForeignKeys gets a shardList and creates the colocated foreign
- * keys between the shardList, if any,
- */
-static void
-CreateColocatedForeignKeys(List *shardList, char *targetNodeName, int targetNodePort)
-{
-	ereport(DEBUG1, (errmsg("Creating post logical replication objects "
-							"(co-located foreign keys) on node %s:%d", targetNodeName,
-							targetNodePort)));
-
-	MemoryContext localContext = AllocSetContextCreate(CurrentMemoryContext,
-													   "CreateColocatedForeignKeys",
-													   ALLOCSET_DEFAULT_SIZES);
-	MemoryContext oldContext = MemoryContextSwitchTo(localContext);
-
-	ListCell *shardCell = NULL;
-	foreach(shardCell, shardList)
-	{
-		ShardInterval *shardInterval = (ShardInterval *) lfirst(shardCell);
-
-		List *shardForeignConstraintCommandList = NIL;
-		List *referenceTableForeignConstraintList = NIL;
-		CopyShardForeignConstraintCommandListGrouped(shardInterval,
-													 &shardForeignConstraintCommandList,
-													 &referenceTableForeignConstraintList);
-
-		if (shardForeignConstraintCommandList == NIL)
-		{
-			/* no colocated foreign keys, skip */
-			continue;
-		}
-
-		/*
-		 * Creating foreign keys may acquire conflicting locks when done in
-		 * parallel. Hence we create foreign keys one at a time.
-		 *
-		 */
-		char *tableOwner = TableOwner(shardInterval->relationId);
-		SendCommandListToWorkerOutsideTransaction(targetNodeName, targetNodePort,
-												  tableOwner,
-												  shardForeignConstraintCommandList);
-		MemoryContextReset(localContext);
-	}
-
-	MemoryContextSwitchTo(oldContext);
-}
-
-
-/*
  * CreateForeignConstraintsToReferenceTable is used to create the foreign constraints
  * from distributed to reference tables in the newly created shard replicas.
  */
 static void
-CreateForeignConstraintsToReferenceTable(List *shardList,
-										 MultiConnection *targetConnection)
+CreateForeignKeyConstraints(List *shardList, MultiConnection *targetConnection)
 {
 	ereport(DEBUG1, (errmsg("Creating post logical replication objects "
 							"(foreign keys to reference tables) on node "
@@ -1040,7 +985,7 @@ CreateForeignConstraintsToReferenceTable(List *shardList,
 
 	MemoryContext localContext =
 		AllocSetContextCreate(CurrentMemoryContext,
-							  "CreateForeignConstraintsToReferenceTable",
+							  "CreateKeyForeignConstraints",
 							  ALLOCSET_DEFAULT_SIZES);
 	MemoryContext oldContext = MemoryContextSwitchTo(localContext);
 
@@ -1050,7 +995,7 @@ CreateForeignConstraintsToReferenceTable(List *shardList,
 	{
 		ListCell *commandCell = NULL;
 		ShardInterval *shardInterval = (ShardInterval *) lfirst(shardCell);
-		List *commandList = GetForeignConstraintCommandsToReferenceTable(shardInterval);
+		List *commandList = GetForeignKeyConstraintCommands(shardInterval);
 
 		/* iterate over the commands and execute them in the same connection */
 		foreach(commandCell, commandList)

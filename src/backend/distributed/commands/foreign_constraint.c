@@ -1164,7 +1164,7 @@ IsTableTypeIncluded(Oid relationId, int flags)
  * constraints.
  */
 List *
-GetForeignConstraintCommandsToReferenceTable(ShardInterval *shardInterval)
+GetForeignKeyConstraintCommands(ShardInterval *shardInterval)
 {
 	ScanKeyData scanKey[1];
 	int scanKeyCount = 1;
@@ -1206,11 +1206,6 @@ GetForeignConstraintCommandsToReferenceTable(ShardInterval *shardInterval)
 		}
 
 		Oid referencedRelationId = constraintForm->confrelid;
-		if (PartitionMethod(referencedRelationId) != DISTRIBUTE_BY_NONE)
-		{
-			heapTuple = systable_getnext(scanDescriptor);
-			continue;
-		}
 
 		Oid constraintId = get_relation_constraint_oid(relationId,
 													   constraintForm->conname.data,

@@ -51,7 +51,7 @@ get_foreign_key_to_reference_table_commands(PG_FUNCTION_ARGS)
 		ShardInterval *firstShardInterval = cacheEntry->sortedShardIntervalArray[0];
 		ListCellAndListWrapper *wrapper = palloc0(sizeof(ListCellAndListWrapper));
 		List *commandsList =
-			GetForeignConstraintCommandsToReferenceTable(firstShardInterval);
+			GetForeignKeyConstraintCommands(firstShardInterval);
 
 		commandsCell = list_head(commandsList);
 		wrapper->list = commandsList;
