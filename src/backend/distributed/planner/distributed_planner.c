@@ -74,7 +74,7 @@ static uint64 NextPlanId = 1;
 /* keep track of planner call stack levels */
 int PlannerLevel = 0;
 
-static void ErrorIfQueryHasMergeCommand(Query *queryTree);
+static void ErrorIfQueryHasMergeCommand(Query *queryTree, List *rangeTableList);
 static bool ContainsMergeCommandWalker(Node *node);
 static bool ListContainsDistributedTableRTE(List *rangeTableList,
 											bool *maybeHasForeignDistributedTable);
@@ -202,7 +202,7 @@ distributed_planner(Query *parse,
 			 * Fast path queries cannot have merge command, and we
 			 * prevent the remaining here.
 			 */
-			ErrorIfQueryHasMergeCommand(parse);
+			ErrorIfQueryHasMergeCommand(parse, rangeTableList);
 
 			/*
 			 * When there are partitioned tables (not applicable to fast path),
@@ -307,7 +307,7 @@ distributed_planner(Query *parse,
  * if there are any Merge command (e.g., CMD_MERGE) in the query tree.
  */
 static void
-ErrorIfQueryHasMergeCommand(Query *queryTree)
+ErrorIfQueryHasMergeCommand(Query *queryTree, List *rangeTableList)
 {
 	/*
 	 * Postgres currently doesn't support Merge queries inside subqueries and
@@ -316,10 +316,29 @@ ErrorIfQueryHasMergeCommand(Query *queryTree)
 	 * We do not call this path for fast-path queries to avoid this additional
 	 * overhead.
 	 */
-	if (ContainsMergeCommandWalker((Node *) queryTree))
+	if (!ContainsMergeCommandWalker((Node *) queryTree))
 	{
-		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						errmsg("MERGE command is not supported on Citus tables yet")));
+		return;
+	}
+
+
+	/*
+	 * In Citus we have limited support for MERGE, it's allowed
+	 * only if both the target and source relations are Citus-local
+	 * or Postgres local.
+	 */
+
+	/* Check if all MERGE-relations are Citus-local, local */
+	RangeTblEntry *rangeTableEntry;
+	foreach_ptr(rangeTableEntry, rangeTableList)
+	{
+		Oid relationId = rangeTableEntry->relid;
+		if (!IsRelationLocalTableOrMatView(relationId))
+		{
+			ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					 errmsg("MERGE command is not supported on Citus tables yet")));
+		}
 	}
 }
 
@@ -611,7 +630,11 @@ IsModifyCommand(Query *query)
 	CmdType commandType = query->commandType;
 
 	if (commandType == CMD_INSERT || commandType == CMD_UPDATE ||
-		commandType == CMD_DELETE)
+		commandType == CMD_DELETE
+		#if PG_VERSION_NUM >= PG_VERSION_15
+		|| commandType == CMD_MERGE
+		#endif
+		)
 	{
 		return true;
 	}

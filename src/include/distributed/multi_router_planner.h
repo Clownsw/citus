@@ -76,7 +76,7 @@ extern RangeTblEntry * ExtractResultRelationRTEOrError(Query *query);
 extern RangeTblEntry * ExtractDistributedInsertValuesRTE(Query *query);
 extern bool IsMultiRowInsert(Query *query);
 extern void AddPartitionKeyNotNullFilterToSelect(Query *subqery);
-extern bool UpdateOrDeleteQuery(Query *query);
+extern bool UpdateOrDeleteOrMergeQuery(Query *query);
 
 extern uint64 GetAnchorShardId(List *relationShardList);
 extern List * TargetShardIntervalForFastPathQuery(Query *query,

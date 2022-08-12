@@ -233,7 +233,7 @@ CreateModifyPlan(Query *originalQuery, Query *query,
 		return distributedPlan;
 	}
 
-	if (UpdateOrDeleteQuery(query))
+	if (UpdateOrDeleteOrMergeQuery(query))
 	{
 		job = RouterJob(originalQuery, plannerRestrictionContext,
 						&distributedPlan->planningError);
@@ -539,7 +539,7 @@ ModifyPartialQuerySupported(Query *queryTree, bool multiShardQuery,
 	if (queryTree->hasSubLinks == true)
 	{
 		/* we support subqueries for INSERTs only via INSERT INTO ... SELECT */
-		if (!UpdateOrDeleteQuery(queryTree))
+		if (!UpdateOrDeleteOrMergeQuery(queryTree))
 		{
 			Assert(queryTree->commandType == CMD_INSERT);
 
@@ -998,7 +998,7 @@ ModifyQuerySupported(Query *queryTree, Query *originalQuery, bool multiShardQuer
 			 * We support UPDATE and DELETE with subqueries and joins unless
 			 * they are multi shard queries.
 			 */
-			if (UpdateOrDeleteQuery(queryTree))
+			if (UpdateOrDeleteOrMergeQuery(queryTree))
 			{
 				continue;
 			}
@@ -1382,14 +1382,18 @@ HasDangerousJoinUsing(List *rtableList, Node *joinTreeNode)
 
 
 /*
- * UpdateOrDeleteQuery checks if the given query is an UPDATE or DELETE command.
+ * UpdateOrDeleteOrMergeQuery checks if the given query is an UPDATE or DELETE command.
  * If it is, it returns true otherwise it returns false.
  */
 bool
-UpdateOrDeleteQuery(Query *query)
+UpdateOrDeleteOrMergeQuery(Query *query)
 {
 	return query->commandType == CMD_UPDATE ||
-		   query->commandType == CMD_DELETE;
+		   query->commandType == CMD_DELETE
+	#if (PG_VERSION_NUM >= PG_VERSION_15)
+		   || query->commandType == CMD_MERGE
+	#endif
+	;
 }
 
 
@@ -2250,7 +2254,7 @@ PlanRouterQuery(Query *originalQuery,
 		 * We defer error here, later the planner is forced to use a generic plan
 		 * by assigning arbitrarily high cost to the plan.
 		 */
-		if (UpdateOrDeleteQuery(originalQuery) && isMultiShardQuery)
+		if (UpdateOrDeleteOrMergeQuery(originalQuery) && isMultiShardQuery)
 		{
 			planningError = DeferredError(ERRCODE_FEATURE_NOT_SUPPORTED,
 										  "Router planner cannot handle multi-shard "
@@ -2289,7 +2293,7 @@ PlanRouterQuery(Query *originalQuery,
 								 NULL, NULL);
 		}
 
-		Assert(UpdateOrDeleteQuery(originalQuery));
+		Assert(UpdateOrDeleteOrMergeQuery(originalQuery));
 		planningError = ModifyQuerySupported(originalQuery, originalQuery,
 											 isMultiShardQuery,
 											 plannerRestrictionContext);
@@ -2361,7 +2365,7 @@ PlanRouterQuery(Query *originalQuery,
 	 * If this is an UPDATE or DELETE query which requires coordinator evaluation,
 	 * don't try update shard names, and postpone that to execution phase.
 	 */
-	bool isUpdateOrDelete = UpdateOrDeleteQuery(originalQuery);
+	bool isUpdateOrDelete = UpdateOrDeleteOrMergeQuery(originalQuery);
 	if (!(isUpdateOrDelete && RequiresCoordinatorEvaluation(originalQuery)))
 	{
 		UpdateRelationToShardNames((Node *) originalQuery, *relationShardList);
