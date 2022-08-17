@@ -76,3 +76,23 @@ DROP FUNCTION pg_catalog.get_all_active_transactions(OUT datid oid, OUT process_
 
 DROP FUNCTION pg_catalog.isolate_tenant_to_new_shard(table_name regclass, tenant_id "any", cascade_option text);
 #include "udfs/isolate_tenant_to_new_shard/11.1-1.sql"
+
+#include "udfs/citus_get_cluster_clock/11.1-1.sql"
+#include "udfs/citus_is_clock_after/11.1-1.sql"
+#include "udfs/citus_internal_adjust_local_clock_to_remote/11.1-1.sql"
+
+CREATE TABLE citus.pg_dist_commit_transaction (
+    transactionId TEXT NOT NULL,
+    clockLogical BIGINT NOT NULL,
+    clockCounter INTEGER NOT NULL,
+    timestamp BIGINT NOT NULL -- Epoch in milliseconds
+);
+
+CREATE INDEX pg_dist_commit_transaction_txnid_index
+ON citus.pg_dist_commit_transaction using btree(transactionId);
+
+ALTER TABLE citus.pg_dist_commit_transaction SET SCHEMA pg_catalog;
+ALTER TABLE pg_catalog.pg_dist_commit_transaction
+ADD CONSTRAINT pg_dist_commit_transaction_unique_constraint UNIQUE (transactionId);
+
+GRANT SELECT ON pg_catalog.pg_dist_commit_transaction TO public;

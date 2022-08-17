@@ -16,6 +16,7 @@
 
 #include "access/xact.h"
 #include "distributed/backend_data.h"
+#include "distributed/causal_clock.h"
 #include "distributed/citus_safe_lib.h"
 #include "distributed/connection_management.h"
 #include "distributed/listutils.h"
@@ -824,6 +825,7 @@ CoordinatedRemoteTransactionsPrepare(void)
 	}
 
 	bool raiseInterrupts = true;
+	List *transacionConnectionList = NIL;
 	WaitForAllConnections(connectionList, raiseInterrupts);
 
 	/* Wait for result */
@@ -845,9 +847,13 @@ CoordinatedRemoteTransactionsPrepare(void)
 		}
 
 		FinishRemoteTransactionPrepare(connection);
+		transacionConnectionList = lappend(transacionConnectionList, connection);
 	}
 
 	CurrentCoordinatedTransactionState = COORD_TRANS_PREPARED;
+
+	/* If enabled, timestamp the transaction with the cluster clock */
+	PrepareAndSetTransactionClock(transacionConnectionList);
 }
 
 

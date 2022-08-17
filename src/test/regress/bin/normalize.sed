@@ -271,3 +271,12 @@ s/^(DETAIL:  "[a-z\ ]+ )pg_temp_[0-9]+(\..*" will be created only locally)$/\1pg
 # will be replaced with
 #   WARNING:  "function func(bigint)" has dependency on unsupported object "schema pg_temp_xxx"
 s/^(WARNING|ERROR)(:  "[a-z\ ]+ .*" has dependency on unsupported object) "schema pg_temp_[0-9]+"$/\1\2 "schema pg_temp_xxx"/g
+
+# In clock tests, normalize epoch value printed
+s/^(DEBUG:  |LOG:  )(Coordinator|Node\([0-9]+:[0-9]+\)|Final global|Set) transaction clock [0-9]+.*$/\1\2 transaction clock xxxxxx/g
+s/^(NOTICE:  )(Clock).*LC:[0-9]+,.*C:[0-9]+,.*$/\1\2 xxxxxx/g
+s/^(DEBUG:  )(Wall clock moved, set logical clock to the wallclock value)\([0-9]+\)$/\1\2(xxxxxx)/g
+/^(DEBUG:  )(Adjusting to remote clock logical)\([0-9]+\) counter\([0-9]+\)$/d
+/^DEBUG:  Persiting transaction.*counter.*$/d
+/^DEBUG:  Both the logical clock values are equal, pick the larger counter.*$/d
+

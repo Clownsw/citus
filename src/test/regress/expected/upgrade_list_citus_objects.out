@@ -52,6 +52,7 @@ ORDER BY 1;
  function citus_finish_citus_upgrade()
  function citus_finish_pg_upgrade()
  function citus_get_active_worker_nodes()
+ function citus_get_cluster_clock()
  function citus_internal.find_groupid_for_node(text,integer)
  function citus_internal.pg_dist_node_trigger_func()
  function citus_internal.pg_dist_rebalance_strategy_trigger_func()
@@ -64,6 +65,7 @@ ORDER BY 1;
  function citus_internal_add_partition_metadata(regclass,"char",text,integer,"char")
  function citus_internal_add_placement_metadata(bigint,integer,bigint,integer,bigint)
  function citus_internal_add_shard_metadata(regclass,bigint,"char",text,text)
+ function citus_internal_adjust_local_clock_to_remote(bigint,integer)
  function citus_internal_delete_colocation_metadata(integer)
  function citus_internal_delete_shard_metadata(bigint)
  function citus_internal_global_blocked_processes()
@@ -239,6 +241,7 @@ ORDER BY 1;
  sequence pg_dist_shardid_seq
  table pg_dist_authinfo
  table pg_dist_colocation
+ table pg_dist_commit_transaction
  table pg_dist_local_group
  table pg_dist_node
  table pg_dist_node_metadata
@@ -251,6 +254,7 @@ ORDER BY 1;
  table pg_dist_transaction
  type citus.distribution_type
  type citus.shard_transfer_mode
+ type clusterclock
  type citus_copy_format
  type noderole
  type replication_slot_info

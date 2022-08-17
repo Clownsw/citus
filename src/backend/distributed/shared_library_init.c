@@ -32,6 +32,7 @@
 #include "common/string.h"
 #include "executor/executor.h"
 #include "distributed/backend_data.h"
+#include "distributed/causal_clock.h"
 #include "distributed/citus_depended_object.h"
 #include "distributed/citus_nodefuncs.h"
 #include "distributed/citus_safe_lib.h"
@@ -455,6 +456,7 @@ _PG_init(void)
 	InitializeCitusQueryStats();
 	InitializeSharedConnectionStats();
 	InitializeLocallyReservedSharedConnections();
+	InitializeClusterClockMem();
 
 	/* initialize shard split shared memory handle management */
 	InitializeShardSplitSMHandleManagement();
@@ -540,6 +542,7 @@ citus_shmem_request(void)
 	RequestAddinShmemSpace(SharedConnectionStatsShmemSize());
 	RequestAddinShmemSpace(MaintenanceDaemonShmemSize());
 	RequestAddinShmemSpace(CitusQueryStatsSharedMemSize());
+	RequestAddinShmemSpace(LogicalClockShmemSize());
 	RequestNamedLWLockTranche(STATS_SHARED_MEM_NAME, 1);
 }
 
@@ -656,6 +659,7 @@ StartupCitusBackend(void)
 	InitializeBackendData();
 	RegisterConnectionCleanup();
 	AssignGlobalPID();
+	InitClockAtBoot();
 }
 
 
@@ -1069,6 +1073,16 @@ RegisterCitusConfigVariables(void)
 		GUC_STANDARD,
 		NULL, NULL, NULL);
 
+	DefineCustomBoolVariable(
+		"citus.enable_cluster_clock",
+		gettext_noop("When true, every distributed transaction is stamped with "
+					 "logical causal clock and persisted in a catalog"),
+		NULL,
+		&EnableClusterClock,
+		false,
+		PGC_USERSET,
+		GUC_NO_SHOW_ALL,
+		NULL, NULL, NULL);
 	DefineCustomBoolVariable(
 		"citus.enable_cost_based_connection_establishment",
 		gettext_noop("When enabled the connection establishment times "

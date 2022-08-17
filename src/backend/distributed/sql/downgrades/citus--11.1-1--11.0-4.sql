@@ -95,3 +95,9 @@ DROP FUNCTION pg_catalog.replicate_reference_tables(citus.shard_transfer_mode);
 
 DROP FUNCTION pg_catalog.isolate_tenant_to_new_shard(table_name regclass, tenant_id "any", cascade_option text, shard_transfer_mode citus.shard_transfer_mode);
 #include "../udfs/isolate_tenant_to_new_shard/8.0-1.sql"
+
+DROP FUNCTION pg_catalog.citus_get_cluster_clock();
+DROP FUNCTION pg_catalog.citus_internal_adjust_local_clock_to_remote(bigint, int);
+DROP FUNCTION pg_catalog.citus_is_clock_after(clusterClock, clusterClock);
+DROP TYPE pg_catalog.clusterClock CASCADE;
+DROP TABLE pg_catalog.pg_dist_commit_transaction;
