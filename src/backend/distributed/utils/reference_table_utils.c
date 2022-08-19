@@ -688,3 +688,53 @@ ReplicateAllReferenceTablesToNode(WorkerNode *workerNode)
 		}
 	}
 }
+
+
+/*
+ * NodeHasAllReferenceTablesReplicas returns whether the given worker node has reference
+ * table replicas. If there are no reference tables the function returns true.
+ *
+ * This function does not do any locking, so the situation could change immediately after,
+ * though we can only ever transition from false to true, so only "false" could be the
+ * incorrect answer.
+ *
+ * In the case where the function returns true because no reference tables exist
+ * on the node, a reference table could be created immediately after. However, the
+ * creation logic guarantees that this reference table will be created on all the
+ * nodes, so our answer was correct.
+ */
+bool
+NodeHasAllReferenceTableReplicas(WorkerNode *workerNode)
+{
+	List *referenceTableIdList = CitusTableTypeIdList(REFERENCE_TABLE);
+
+	if (list_length(referenceTableIdList) == 0)
+	{
+		/* no reference tables exist */
+		return true;
+	}
+
+	Oid referenceTableId = linitial_oid(referenceTableIdList);
+	List *shardIntervalList = LoadShardIntervalList(referenceTableId);
+	if (list_length(shardIntervalList) != 1)
+	{
+		/* check for corrupt metadata */
+		ereport(ERROR, (errmsg("reference table \"%s\" can only have 1 shard",
+							   get_rel_name(referenceTableId))));
+	}
+
+	ShardInterval *shardInterval = (ShardInterval *) linitial(shardIntervalList);
+	List *shardPlacementList = ActiveShardPlacementList(shardInterval->shardId);
+
+	ShardPlacement *placement = NULL;
+	foreach_ptr(placement, shardPlacementList)
+	{
+		if (placement->groupId == workerNode->groupId)
+		{
+			/* our worker has a reference table placement */
+			return true;
+		}
+	}
+
+	return false;
+}

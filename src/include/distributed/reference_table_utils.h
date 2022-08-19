@@ -26,5 +26,6 @@ extern void DeleteAllReplicatedTablePlacementsFromNodeGroup(int32 groupId,
 															bool localOnly);
 extern int CompareOids(const void *leftElement, const void *rightElement);
 extern void ReplicateAllReferenceTablesToNode(WorkerNode *workerNode);
+extern bool NodeHasAllReferenceTableReplicas(WorkerNode *workerNode);
 
 #endif /* REFERENCE_TABLE_UTILS_H_ */

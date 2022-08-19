@@ -427,13 +427,26 @@ SplitShard(SplitMode splitMode,
 							errmsg("Invalid Node Id '%u'.", nodeIdValue)));
 		}
 
+		if (!NodeHasAllReferenceTableReplicas(workerNode))
+		{
+			ereport(ERROR, (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+							errmsg("reference tables have not been replicated to "
+								   "node %s:%d yet",
+								   workerNode->workerName,
+								   workerNode->workerPort),
+							errdetail("Reference tables are lazily replicated after "
+									  "adding a node, but must exist before shards can "
+									  "be created on that node."),
+							errhint("Run SELECT replicate_reference_tables(); to "
+									"ensure reference tables exist on all nodes.")));
+		}
+
 		workersForPlacementList =
 			lappend(workersForPlacementList, (void *) workerNode);
 	}
 
 	if (splitMode == BLOCKING_SPLIT)
 	{
-		EnsureReferenceTablesExistOnAllNodesExtended(TRANSFER_MODE_BLOCK_WRITES);
 		BlockingShardSplit(
 			splitOperation,
 			shardIntervalToSplit,
