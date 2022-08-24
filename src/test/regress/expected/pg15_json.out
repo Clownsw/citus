@@ -93,7 +93,7 @@ WHERE my_films.id = 1;
 -- set it DEBUG1 in case the plan changes
 -- we can see details
 SET client_min_messages TO DEBUG1;
--- a mult-shard query
+-- a multi-shard query
 SELECT jt.* FROM
  my_films,
  JSON_TABLE ( js, '$.favorites[*]' COLUMNS (
@@ -346,6 +346,28 @@ FROM
  Alfred Hitchcock | Vertigo  | thriller | Psycho  | horror
  Alfred Hitchcock | Vertigo2 | thriller | Psycho2 | horror
 (2 rows)
+
+-- sql/json constructor functions
+SELECT
+  json('{"id":' || id || '}' WITH UNIQUE KEYS RETURNING jsonb),
+  json_scalar(id),
+  json_object('id' VALUE id, 'first_favorite_kind': js #> '{favorites,1,kind}'),
+  json_array(id, id+1)
+FROM my_films;
+   json    | json_scalar |                json_object                 | json_array
+---------------------------------------------------------------------
+ {"id": 1} | 1           | {"id": 1, "first_favorite_kind": "horror"} | [1, 2]
+ {"id": 2} | 2           | {"id": 2, "first_favorite_kind": "horror"} | [2, 3]
+(2 rows)
+
+-- sql/json constructor aggregates
+SELECT json_arrayagg(id order by id desc),
+       json_objectagg('id_less_than_five' VALUE id<5)
+FROM my_films;
+ json_arrayagg |                       json_objectagg
+---------------------------------------------------------------------
+ [2, 1]        | { "id_less_than_five" : true, "id_less_than_five" : true }
+(1 row)
 
 RESET client_min_messages;
 -- test some utility functions on the target list & where clause

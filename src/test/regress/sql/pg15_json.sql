@@ -72,7 +72,7 @@ WHERE my_films.id = 1;
 -- we can see details
 SET client_min_messages TO DEBUG1;
 
--- a mult-shard query
+-- a multi-shard query
 SELECT jt.* FROM
  my_films,
  JSON_TABLE ( js, '$.favorites[*]' COLUMNS (
@@ -230,6 +230,19 @@ FROM
    PLAN (favs INNER ((films1 INNER film1) CROSS (films2 INNER film2)))
   ) AS jt
  WHERE kind1 > kind2 AND director1 = director2;
+
+-- sql/json constructor functions
+SELECT
+  json('{"id":' || id || '}' WITH UNIQUE KEYS RETURNING jsonb),
+  json_scalar(id),
+  json_object('id' VALUE id, 'first_favorite_kind': js #> '{favorites,1,kind}'),
+  json_array(id, id+1)
+FROM my_films;
+
+-- sql/json constructor aggregates
+SELECT json_arrayagg(id order by id desc),
+       json_objectagg('id_less_than_five' VALUE id<5)
+FROM my_films;
 
 RESET client_min_messages;
 
