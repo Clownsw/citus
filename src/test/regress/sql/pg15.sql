@@ -242,5 +242,17 @@ ON (true)
 WHEN MATCHED THEN
     UPDATE SET x = (SELECT count(*) FROM tbl2);
 
+-- test new regex functions
+-- print order comments that contain the word `fluffily` at least twice
+SELECT o_comment FROM public.orders WHERE regexp_count(o_comment, 'FluFFily', 1, 'i')>=2 ORDER BY 1;
+-- print the same items using a different regexp function
+SELECT o_comment FROM public.orders WHERE regexp_like(o_comment, 'fluffily.*fluffily') ORDER BY 1;
+-- print the position where we find the second fluffily in the comment
+SELECT o_comment, regexp_instr(o_comment, 'fluffily.*(fluffily)') FROM public.orders ORDER BY 2 desc LIMIT 5;
+-- print the substrings between two `fluffily`
+SELECT regexp_substr(o_comment, 'fluffily.*fluffily') FROM public.orders ORDER BY 1 LIMIT 5;
+-- replace second `fluffily` with `silkily`
+SELECT regexp_replace(o_comment, 'fluffily', 'silkily', 1, 2) FROM public.orders WHERE regexp_like(o_comment, 'fluffily.*fluffily') ORDER BY 1 desc;
+
 -- Clean up
 DROP SCHEMA pg15 CASCADE;
