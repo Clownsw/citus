@@ -254,5 +254,11 @@ SELECT regexp_substr(o_comment, 'fluffily.*fluffily') FROM public.orders ORDER B
 -- replace second `fluffily` with `silkily`
 SELECT regexp_replace(o_comment, 'fluffily', 'silkily', 1, 2) FROM public.orders WHERE regexp_like(o_comment, 'fluffily.*fluffily') ORDER BY 1 desc;
 
+-- test numeric types with negative scale
+CREATE TABLE numeric_test(id numeric(3,-1), orig_value int);
+SELECT create_distributed_table('numeric_test','id');
+INSERT into numeric_test SELECT x,x FROM generate_series(111, 115) x;
+SELECT * FROM numeric_test ORDER BY 1,2;
+
 -- Clean up
 DROP SCHEMA pg15 CASCADE;

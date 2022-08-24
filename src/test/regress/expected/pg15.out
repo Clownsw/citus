@@ -444,9 +444,28 @@ SELECT regexp_replace(o_comment, 'fluffily', 'silkily', 1, 2) FROM public.orders
  al, bold deposits cajole fluffily silkily final foxes. pending ideas beli
 (5 rows)
 
+-- test numeric types with negative scale
+CREATE TABLE numeric_test(id numeric(3,-1), orig_value int);
+SELECT create_distributed_table('numeric_test','id');
+ create_distributed_table
+---------------------------------------------------------------------
+
+(1 row)
+
+INSERT into numeric_test SELECT x,x FROM generate_series(111, 115) x;
+SELECT * FROM numeric_test ORDER BY 1,2;
+ id  | orig_value
+---------------------------------------------------------------------
+ 110 |        111
+ 110 |        112
+ 110 |        113
+ 110 |        114
+ 120 |        115
+(5 rows)
+
 -- Clean up
 DROP SCHEMA pg15 CASCADE;
-NOTICE:  drop cascades to 9 other objects
+NOTICE:  drop cascades to 10 other objects
 DETAIL:  drop cascades to collation german_phonebook_test
 drop cascades to collation default_provider
 drop cascades to table sale
@@ -456,3 +475,4 @@ drop cascades to view sale_triggers
 drop cascades to table generated_stored_ref
 drop cascades to table tbl1
 drop cascades to table tbl2
+drop cascades to table numeric_test
