@@ -8,8 +8,8 @@ SELECT nextval('pg_dist_placement_placementid_seq') = MAX(placementid)+1 FROM pg
 SELECT nextval('pg_dist_groupid_seq') = MAX(groupid)+1 FROM pg_dist_node;
 SELECT nextval('pg_dist_node_nodeid_seq') = MAX(nodeid)+1 FROM pg_dist_node;
 SELECT nextval('pg_dist_colocationid_seq') = MAX(colocationid)+1 FROM pg_dist_colocation;
-SELECT nextval('pg_dist_background_jobs_job_id_seq') = COALESCE(MAX(job_id)+1, 1) FROM pg_dist_background_jobs;
-SELECT nextval('pg_dist_background_tasks_task_id_seq') = COALESCE(MAX(task_id)+1, 1) FROM pg_dist_background_tasks;
+SELECT nextval('pg_dist_background_jobs_job_id_seq') > COALESCE(MAX(job_id), 0) FROM pg_dist_background_jobs;
+SELECT nextval('pg_dist_background_tasks_task_id_seq') > COALESCE(MAX(task_id), 0) FROM pg_dist_background_tasks;
 
 -- If this query gives output it means we've added a new sequence that should
 -- possibly be restored after upgrades.

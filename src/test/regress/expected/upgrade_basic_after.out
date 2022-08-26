@@ -39,13 +39,13 @@ SELECT nextval('pg_dist_colocationid_seq') = MAX(colocationid)+1 FROM pg_dist_co
  t
 (1 row)
 
-SELECT nextval('pg_dist_background_jobs_job_id_seq') = COALESCE(MAX(job_id)+1, 1) FROM pg_dist_background_jobs;
+SELECT nextval('pg_dist_background_jobs_job_id_seq') > COALESCE(MAX(job_id), 0) FROM pg_dist_background_jobs;
  ?column?
 ---------------------------------------------------------------------
  t
 (1 row)
 
-SELECT nextval('pg_dist_background_tasks_task_id_seq') = COALESCE(MAX(task_id)+1, 1) FROM pg_dist_background_tasks;
+SELECT nextval('pg_dist_background_tasks_task_id_seq') > COALESCE(MAX(task_id), 0) FROM pg_dist_background_tasks;
  ?column?
 ---------------------------------------------------------------------
  t
