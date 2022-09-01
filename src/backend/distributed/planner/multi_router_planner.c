@@ -2677,8 +2677,8 @@ TargetShardIntervalForFastPathQuery(Query *query, bool *isMultiShardQuery,
 	}
 
 	/* we're only expecting single shard from a single table */
-	Node *distKey PG_USED_FOR_ASSERTS_ONLY = NULL;
-	Assert(FastPathRouterQuery(query, &distKey) || !EnableFastPathRouterPlanner);
+	/*Node *distKey PG_USED_FOR_ASSERTS_ONLY = NULL; */
+	/*Assert(FastPathRouterQuery(query, &distKey) || !EnableFastPathRouterPlanner); */
 
 	if (list_length(prunedShardIntervalList) > 1)
 	{
