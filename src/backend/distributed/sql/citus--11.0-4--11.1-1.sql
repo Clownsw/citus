@@ -93,6 +93,8 @@ CREATE TABLE citus.pg_dist_background_jobs (
 );
 ALTER TABLE citus.pg_dist_background_jobs SET SCHEMA pg_catalog;
 CREATE UNIQUE INDEX pg_dist_background_jobs_job_id_index ON pg_catalog.pg_dist_background_jobs using btree(job_id);
+GRANT SELECT ON pg_catalog.pg_dist_background_jobs TO public;
+GRANT SELECT ON pg_catalog.pg_dist_background_jobs_job_id_seq TO public;
 
 CREATE TYPE citus.citus_task_status AS ENUM ('blocked', 'runnable', 'running', 'done', 'error', 'unscheduled', 'cancelled');
 ALTER TYPE citus.citus_task_status SET SCHEMA pg_catalog;
@@ -111,6 +113,8 @@ CREATE TABLE citus.pg_dist_background_tasks(
 ALTER TABLE citus.pg_dist_background_tasks SET SCHEMA pg_catalog;
 CREATE UNIQUE INDEX pg_dist_background_tasks_task_id_index ON pg_catalog.pg_dist_background_tasks using btree(job_id, task_id);
 CREATE INDEX pg_dist_background_tasks_status_task_id_index ON pg_catalog.pg_dist_background_tasks using btree(status, task_id);
+GRANT SELECT ON pg_catalog.pg_dist_background_tasks TO public;
+GRANT SELECT ON pg_catalog.pg_dist_background_tasks_task_id_seq TO public;
 
 CREATE TABLE citus.pg_dist_background_tasks_depend(
     job_id bigint NOT NULL REFERENCES pg_catalog.pg_dist_background_jobs(job_id) ON DELETE CASCADE,
@@ -125,6 +129,7 @@ CREATE TABLE citus.pg_dist_background_tasks_depend(
 ALTER TABLE citus.pg_dist_background_tasks_depend SET SCHEMA pg_catalog;
 CREATE INDEX pg_dist_background_tasks_depend_task_id ON pg_catalog.pg_dist_background_tasks_depend  USING btree(job_id, task_id);
 CREATE INDEX pg_dist_background_tasks_depend_depends_on ON pg_catalog.pg_dist_background_tasks_depend USING btree(job_id, depends_on);
+GRANT SELECT ON pg_catalog.pg_dist_background_tasks_depend TO public;
 
 #include "udfs/citus_jobs_wait/11.1-1.sql"
 #include "udfs/citus_jobs_cancel/11.1-1.sql"
