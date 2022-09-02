@@ -2866,38 +2866,6 @@ ResetRunningBackgroundTasks(void)
 }
 
 
-void
-DeepFreeBackgroundTask(BackgroundTask *task)
-{
-	if (task->pid)
-	{
-		pfree(task->pid);
-	}
-
-	if (task->command)
-	{
-		pfree(task->command);
-	}
-
-	if (task->retry_count)
-	{
-		pfree(task->retry_count);
-	}
-
-	if (task->not_before)
-	{
-		pfree(task->not_before);
-	}
-
-	if (task->message)
-	{
-		pfree(task->message);
-	}
-
-	pfree(task);
-}
-
-
 static BackgroundJob *
 DeformBackgroundJobHeapTuple(TupleDesc tupleDescriptor, HeapTuple jobTuple)
 {
@@ -2925,16 +2893,16 @@ DeformBackgroundJobHeapTuple(TupleDesc tupleDescriptor, HeapTuple jobTuple)
 
 	if (!nulls[Anum_pg_dist_background_jobs_started_at - 1])
 	{
-		job->started_at = palloc0(sizeof(TimestampTz));
-		*(job->started_at) = DatumGetTimestampTz(
-			values[Anum_pg_dist_background_jobs_started_at - 1]);
+		TimestampTz startedAt =
+			DatumGetTimestampTz(values[Anum_pg_dist_background_jobs_started_at - 1]);
+		SET_NULLABLE_FIELD(job, started_at, startedAt);
 	}
 
 	if (!nulls[Anum_pg_dist_background_jobs_finished_at - 1])
 	{
-		job->finished_at = palloc0(sizeof(TimestampTz));
-		*(job->finished_at) = DatumGetTimestampTz(
-			values[Anum_pg_dist_background_jobs_finished_at - 1]);
+		TimestampTz finishedAt =
+			DatumGetTimestampTz(values[Anum_pg_dist_background_jobs_finished_at - 1]);
+		SET_NULLABLE_FIELD(job, finished_at, finishedAt);
 	}
 
 	return job;
@@ -2954,8 +2922,8 @@ DeformBackgroundTaskHeapTuple(TupleDesc tupleDescriptor, HeapTuple taskTuple)
 	task->owner = DatumGetObjectId(values[Anum_pg_dist_background_tasks_owner - 1]);
 	if (!nulls[Anum_pg_dist_background_tasks_pid - 1])
 	{
-		task->pid = palloc0(sizeof(int32));
-		*(task->pid) = DatumGetInt32(values[Anum_pg_dist_background_tasks_pid - 1]);
+		int32 pid = DatumGetInt32(values[Anum_pg_dist_background_tasks_pid - 1]);
+		SET_NULLABLE_FIELD(task, pid, pid);
 	}
 	task->status = BackgroundTaskStatusByOid(
 		DatumGetObjectId(values[Anum_pg_dist_background_tasks_status - 1]));
@@ -2965,22 +2933,22 @@ DeformBackgroundTaskHeapTuple(TupleDesc tupleDescriptor, HeapTuple taskTuple)
 
 	if (!nulls[Anum_pg_dist_background_tasks_retry_count - 1])
 	{
-		task->retry_count = palloc0(sizeof(int32));
-		*(task->retry_count) = DatumGetInt32(
-			values[Anum_pg_dist_background_tasks_retry_count - 1]);
+		int32 retryCount =
+			DatumGetInt32(values[Anum_pg_dist_background_tasks_retry_count - 1]);
+		SET_NULLABLE_FIELD(task, retry_count, retryCount);
 	}
 
 	if (!nulls[Anum_pg_dist_background_tasks_not_before - 1])
 	{
-		task->not_before = palloc0(sizeof(TimestampTz));
-		*(task->not_before) = DatumGetTimestampTz(
-			values[Anum_pg_dist_background_tasks_not_before - 1]);
+		TimestampTz notBefore =
+			DatumGetTimestampTz(values[Anum_pg_dist_background_tasks_not_before - 1]);
+		SET_NULLABLE_FIELD(task, not_before, notBefore);
 	}
 
 	if (!nulls[Anum_pg_dist_background_tasks_message - 1])
 	{
-		task->message = pstrdup(DatumGetCString(
-									values[Anum_pg_dist_background_tasks_message - 1]));
+		task->message = pstrdup(
+			DatumGetCString(values[Anum_pg_dist_background_tasks_message - 1]));
 	}
 
 	return task;
@@ -3027,7 +2995,7 @@ BackgroundTaskHasUmnetDependencies(int64 jobId, int64 taskId)
 		 */
 		if (dependingJob->status == BACKGROUND_TASK_STATUS_DONE)
 		{
-			DeepFreeBackgroundTask(dependingJob);
+			pfree(dependingJob);
 			continue;
 		}
 
@@ -3038,7 +3006,7 @@ BackgroundTaskHasUmnetDependencies(int64 jobId, int64 taskId)
 		 */
 		Assert(dependingJob->status != BACKGROUND_TASK_STATUS_ERROR);
 
-		DeepFreeBackgroundTask(dependingJob);
+		pfree(dependingJob);
 		hasUnmetDependency = true;
 		break;
 	}
@@ -3110,7 +3078,7 @@ GetRunnableBackgroundTask(void)
 				break;
 			}
 
-			DeepFreeBackgroundTask(task);
+			pfree(task);
 			task = NULL;
 		}
 

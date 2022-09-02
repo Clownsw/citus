@@ -145,30 +145,6 @@ citus_jobs_wait(PG_FUNCTION_ARGS)
 }
 
 
-static void
-BackgroundTaskUpdatePid(BackgroundTask *task, pid_t *pid)
-{
-	if (pid)
-	{
-		if (!task->pid)
-		{
-			MemoryContext taskContext = GetMemoryChunkContext(task);
-			task->pid = MemoryContextAlloc(taskContext, sizeof(int32));
-		}
-		*task->pid = *pid;
-	}
-	else
-	{
-		/* clear any existing pid */
-		if (task->pid)
-		{
-			pfree(task->pid);
-		}
-		task->pid = NULL;
-	}
-}
-
-
 BackgroundWorkerHandle *
 StartCitusBackgroundTaskQueueMonitor(Oid database, Oid extensionOwner)
 {
@@ -343,7 +319,7 @@ CitusBackgroundTaskQueueMonitorMain(Datum arg)
 		PushActiveSnapshot(GetTransactionSnapshot());
 
 		task->status = BACKGROUND_TASK_STATUS_RUNNING;
-		BackgroundTaskUpdatePid(task, &pid);
+		SET_NULLABLE_FIELD(task, pid, pid);
 
 		/* Update task status to indicate it is running */
 		UpdateBackgroundTask(task);
@@ -408,7 +384,7 @@ CitusBackgroundTaskQueueMonitorMain(Datum arg)
 			shm_mq_detach(responseq);
 		}
 
-		BackgroundTaskUpdatePid(task, NULL);
+		UNSET_NULLABLE_FIELD(task, pid);
 		task->status = BACKGROUND_TASK_STATUS_DONE;
 		if (hadError)
 		{
@@ -422,10 +398,7 @@ CitusBackgroundTaskQueueMonitorMain(Datum arg)
 			}
 			else if (!task->retry_count)
 			{
-				/* first retry, need to allocate a counter */
-				MemoryContext taskContext = GetMemoryChunkContext(task);
-				task->retry_count = MemoryContextAlloc(taskContext, sizeof(int32));
-				*task->retry_count = 1;
+				SET_NULLABLE_FIELD(task, retry_count, 1);
 			}
 			else
 			{
@@ -438,25 +411,15 @@ CitusBackgroundTaskQueueMonitorMain(Datum arg)
 				{
 					/* fail after 3 retries */
 					task->status = BACKGROUND_TASK_STATUS_ERROR;
-					if (task->not_before)
-					{
-						pfree(task->not_before);
-						task->not_before = NULL;
-					}
+					UNSET_NULLABLE_FIELD(task, not_before);
 				}
 				else
 				{
-					if (!task->not_before)
-					{
-						MemoryContext taskContext = GetMemoryChunkContext(task);
-						task->not_before = MemoryContextAlloc(taskContext,
-															  sizeof(TimestampTz));
-					}
-
 					/* TODO figure out good backoff strategy, we retry in 10*retry minutes */
-					*(task->not_before) = TimestampTzPlusMilliseconds(
+					TimestampTz notBefore = TimestampTzPlusMilliseconds(
 						GetCurrentTimestamp(),
 						*(task->retry_count) * 10 * 60 * 1000);
+					SET_NULLABLE_FIELD(task, not_before, notBefore);
 
 					task->status = BACKGROUND_TASK_STATUS_RUNNABLE;
 				}
@@ -471,9 +434,6 @@ CitusBackgroundTaskQueueMonitorMain(Datum arg)
 
 		PopActiveSnapshot();
 		CommitTransactionCommand();
-
-		DeepFreeBackgroundTask(task);
-		task = NULL;
 	}
 
 	MemoryContextSwitchTo(oldContextPerJob);

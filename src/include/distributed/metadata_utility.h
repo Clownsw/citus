@@ -222,6 +222,13 @@ typedef struct BackgroundJob
 	char *description;
 	TimestampTz *started_at;
 	TimestampTz *finished_at;
+
+	/* extra space to store values for nullable value types above */
+	struct
+	{
+		TimestampTz started_at;
+		TimestampTz finished_at;
+	} __do_not_use;
 } BackgroundJob;
 
 typedef enum BackgroundTaskStatus
@@ -246,8 +253,22 @@ typedef struct BackgroundTask
 	int32 *retry_count;
 	TimestampTz *not_before;
 	char *message;
+
+	/* extra space to store values for nullable value types above */
+	struct
+	{
+		int32 pid;
+		int32 retry_count;
+		TimestampTz not_before;
+	} __do_not_use;
 } BackgroundTask;
 
+#define SET_NULLABLE_FIELD(ptr, field, value) \
+	(ptr)->__do_not_use.field = (value); \
+	(ptr)->field = &((ptr)->__do_not_use.field)
+
+#define UNSET_NULLABLE_FIELD(ptr, field) \
+	(ptr)->field = NULL
 
 /* Size functions */
 extern Datum citus_table_size(PG_FUNCTION_ARGS);
@@ -369,7 +390,6 @@ extern BackgroundTask * ScheduleBackgroundTask(int64 jobId, Oid owner, char *com
 											   int64 dependingTaskIds[]);
 extern BackgroundTask * GetRunnableBackgroundTask(void);
 extern void ResetRunningBackgroundTasks(void);
-extern void DeepFreeBackgroundTask(BackgroundTask *task);
 extern BackgroundJob * GetBackgroundJobByJobId(int64 jobId);
 extern BackgroundTask * GetBackgroundTaskByTaskId(int64 jobId, int64 taskId);
 extern void UpdateBackgroundJob(int64 jobId);
