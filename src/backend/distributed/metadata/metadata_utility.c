@@ -2822,7 +2822,7 @@ ResetRunningBackgroundTasks(void)
 	Relation pgDistBackgroundTasks =
 		table_open(DistBackgroundTasksRelationId(), AccessShareLock);
 
-	/* pg_dist_rebalance_jobs.status == 'running' */
+	/* pg_dist_background_tasks.status == 'running' */
 	ScanKeyInit(&scanKey[0], Anum_pg_dist_background_tasks_status,
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(CitusTaskStatusRunningId()));

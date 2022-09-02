@@ -19,7 +19,6 @@
 #include "distributed/pg_version_constants.h"
 
 #include <time.h>
-#include <executor/spi.h>
 
 #include "miscadmin.h"
 #include "pgstat.h"
@@ -701,11 +700,6 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 									   BackgroundTaskQueueCheckInterval) &&
 			backgroundTaskQueueWorkerStatus == BGWH_STOPPED)
 		{
-			/*
-			 * TODO add spot check for lock acquisition to prevent multiple backends to
-			 * start simultaniously
-			 */
-
 			/* clear old background worker for task queue before checking for new tasks */
 			if (backgroundTasksQueueBgwHandle)
 			{
