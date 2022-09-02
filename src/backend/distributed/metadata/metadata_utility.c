@@ -25,6 +25,7 @@
 #include "access/xact.h"
 #include "catalog/dependency.h"
 #include "catalog/indexing.h"
+#include "catalog/pg_authid.h"
 #include "catalog/pg_constraint.h"
 #include "catalog/pg_extension.h"
 #include "catalog/pg_namespace.h"
@@ -3619,10 +3620,22 @@ CancelTasksForJob(int64 jobid)
 			continue;
 		}
 
-		/*
-		 * TODO we should probably add user checks to see if the user is allowed to
-		 * cancel the current task
-		 */
+		/* make sure the current user has the rights to cancel this task */
+		Oid taskOwner = DatumGetObjectId(values[Anum_pg_dist_background_tasks_owner]);
+		if (superuser_arg(taskOwner) && !superuser())
+		{
+			/* must be a superuser to cancel tasks owned by superuser */
+			ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+							errmsg("must be a superuser to cancel superuser tasks")));
+		}
+		else if (!has_privs_of_role(GetUserId(), taskOwner) &&
+				 !has_privs_of_role(GetUserId(), ROLE_PG_SIGNAL_BACKEND))
+		{
+			/* user doesn't have the permissions to cancel this job */
+			ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+							errmsg("must be a member of the role whose task is being "
+								   "canceled or member of pg_signal_backend")));
+		}
 
 		if (status == BACKGROUND_TASK_STATUS_RUNNING)
 		{
