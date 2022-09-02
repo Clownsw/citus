@@ -3386,8 +3386,6 @@ UpdateBackgroundJob(int64 jobId)
 		}
 	}
 
-	/* TODO update finished time */
-
 #undef UPDATE_FIELD
 
 	if (updated)
