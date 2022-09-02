@@ -60,6 +60,7 @@
 #include "utils/builtins.h"
 #include "utils/memutils.h"
 #include "utils/lsyscache.h"
+#include "distributed/resource_lock.h"
 
 /*
  * Shared memory data for all maintenance workers.
@@ -732,20 +733,56 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 
 			if (shouldStartBackgroundTaskQueueBackgroundWorker)
 			{
-				/* spawn background worker */
-				ereport(LOG, (errmsg("found scheduled background tasks, starting new "
-									 "background worker for execution")));
+				/*
+				 * Before we start the background worker we want to check if an orphaned
+				 * one is still running. This could happen when the maintenance daemon
+				 * restrated in a way where the background task queue monitor wasn't
+				 * restarted.
+				 *
+				 * To check if an orphaned background task queue monitor is still running
+				 * we quickly acquire the lock without waiting. If we can't acquire the
+				 * lock this was we know that some other backed still has the lock. We
+				 * prevent a new backend from starting and log a warning that we found
+				 * that another process still holds the lock.
+				 */
+				LOCKTAG tag = { 0 };
+				SET_LOCKTAG_CITUS_OPERATION(tag, CITUS_BACKGROUND_TASK_MONITOR);
+				const bool sessionLock = false;
+				const bool dontWait = true;
+				LockAcquireResult locked =
+					LockAcquire(&tag, AccessExclusiveLock, sessionLock, dontWait);
 
-				backgroundTasksQueueBgwHandle =
-					StartCitusBackgroundTaskQueueMonitor(MyDatabaseId,
-														 myDbData->userOid);
-
-				if (!backgroundTasksQueueBgwHandle ||
-					GetBackgroundWorkerPid(backgroundTasksQueueBgwHandle,
-										   &backgroundTaskQueueWorkerPid) == BGWH_STOPPED)
+				if (locked == LOCKACQUIRE_NOT_AVAIL)
 				{
-					ereport(WARNING, (errmsg("unable to start background worker for "
-											 "background task execution")));
+					ereport(WARNING, (errmsg(
+										  "background task queue monitor already held"),
+									  errdetail("the background task queue monitor lock "
+												"is held by another backend, indicating "
+												"the maintenance daemon has lost track "
+												"of an already running background task "
+												"queue monitor, not starting a new one"))
+							);
+				}
+				else
+				{
+					LockRelease(&tag, AccessExclusiveLock, sessionLock);
+
+					/* spawn background worker */
+					ereport(LOG, (errmsg("found scheduled background tasks, starting new "
+										 "background task queue monitor")));
+
+					backgroundTasksQueueBgwHandle =
+						StartCitusBackgroundTaskQueueMonitor(MyDatabaseId,
+															 myDbData->userOid);
+
+					if (!backgroundTasksQueueBgwHandle ||
+						GetBackgroundWorkerPid(backgroundTasksQueueBgwHandle,
+											   &backgroundTaskQueueWorkerPid) ==
+						BGWH_STOPPED)
+					{
+						ereport(WARNING, (errmsg("unable to start background worker for "
+												 "background task execution")));
+					}
 				}
 			}
 
