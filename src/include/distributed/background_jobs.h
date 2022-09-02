@@ -5,9 +5,9 @@
 
 #include "postmaster/bgworker.h"
 
-extern BackgroundWorkerHandle * StartCitusBackgroundTaskMonitorWorker(Oid database, Oid
-																	  extensionOwner);
-extern void CitusBackgroundTaskMonitorMain(Datum arg);
+extern BackgroundWorkerHandle * StartCitusBackgroundTaskQueueMonitor(Oid database,
+																	 Oid extensionOwner);
+extern void CitusBackgroundTaskQueueMonitorMain(Datum arg);
 extern void CitusBackgroundJobExecuter(Datum main_arg);
 
 extern bool BackgroundTaskMonitorDebugDelay;

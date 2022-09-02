@@ -881,6 +881,16 @@ RegisterCitusConfigVariables(void)
 		GUC_UNIT_MS,
 		NULL, NULL, NULL);
 
+	DefineCustomIntVariable(
+		"citus.background_task_queue_interval",
+		gettext_noop("Time to wait between checks for scheduled background tasks."),
+		NULL,
+		&BackgroundTaskQueueCheckInterval,
+		1000, -1, 7 * 24 * 3600 * 1000,
+		PGC_SIGHUP,
+		GUC_UNIT_MS,
+		NULL, NULL, NULL);
+
 	DefineCustomBoolVariable(
 		"citus.check_available_space_before_move",
 		gettext_noop("When enabled will check free disk space before a shard move"),
@@ -1939,16 +1949,6 @@ RegisterCitusConfigVariables(void)
 		propagate_set_commands_options,
 		PGC_USERSET,
 		GUC_STANDARD,
-		NULL, NULL, NULL);
-
-	DefineCustomIntVariable(
-		"citus.rebalance_check_interval",
-		gettext_noop("Time to wait between checks for scheduled rebalance jobs."),
-		NULL,
-		&RebalanceCheckInterval,
-		1000, -1, 7 * 24 * 3600 * 1000,
-		PGC_SIGHUP,
-		GUC_UNIT_MS,
 		NULL, NULL, NULL);
 
 	DefineCustomIntVariable(

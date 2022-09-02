@@ -3653,6 +3653,11 @@ CancelTasksForJob(int64 jobid)
 			continue;
 		}
 
+		/*
+		 * TODO we should probably add user checks to see if the user is allowed to
+		 * cancel the current task
+		 */
+
 		if (status == BACKGROUND_TASK_STATUS_RUNNING)
 		{
 			if (!nulls[Anum_pg_dist_background_tasks_pid - 1])

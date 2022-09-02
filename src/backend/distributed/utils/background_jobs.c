@@ -68,7 +68,7 @@ citus_jobs_cancel(PG_FUNCTION_ARGS)
 	/* Cancel all tasks that were scheduled before */
 	List *pids = CancelTasksForJob(jobid);
 
-	/* send cancelation to any running backends */
+	/* send cancellation to any running backends */
 	int pid = 0;
 	const int sig = SIGINT;
 	foreach_int(pid, pids)
@@ -170,7 +170,7 @@ BackgroundTaskUpdatePid(BackgroundTask *task, pid_t *pid)
 
 
 BackgroundWorkerHandle *
-StartCitusBackgroundTaskMonitorWorker(Oid database, Oid extensionOwner)
+StartCitusBackgroundTaskQueueMonitor(Oid database, Oid extensionOwner)
 {
 	BackgroundWorker worker = { 0 };
 	BackgroundWorkerHandle *handle = NULL;
@@ -178,7 +178,7 @@ StartCitusBackgroundTaskMonitorWorker(Oid database, Oid extensionOwner)
 	/* Configure a worker. */
 	memset(&worker, 0, sizeof(worker));
 	SafeSnprintf(worker.bgw_name, BGW_MAXLEN,
-				 "Citus Background Task Monitor: %u/%u",
+				 "Citus Background Task Queue Monitor: %u/%u",
 				 database, extensionOwner);
 	worker.bgw_flags =
 		BGWORKER_SHMEM_ACCESS | BGWORKER_BACKEND_DATABASE_CONNECTION;
@@ -188,7 +188,7 @@ StartCitusBackgroundTaskMonitorWorker(Oid database, Oid extensionOwner)
 	worker.bgw_restart_time = BGW_NEVER_RESTART;
 	strcpy_s(worker.bgw_library_name, sizeof(worker.bgw_library_name), "citus");
 	strcpy_s(worker.bgw_function_name, sizeof(worker.bgw_library_name),
-			 "CitusBackgroundTaskMonitorMain");
+			 "CitusBackgroundTaskQueueMonitorMain");
 	worker.bgw_main_arg = ObjectIdGetDatum(MyDatabaseId);
 	memcpy_s(worker.bgw_extra, sizeof(worker.bgw_extra), &extensionOwner,
 			 sizeof(Oid));
@@ -207,7 +207,7 @@ StartCitusBackgroundTaskMonitorWorker(Oid database, Oid extensionOwner)
 
 
 void
-CitusBackgroundTaskMonitorMain(Datum arg)
+CitusBackgroundTaskQueueMonitorMain(Datum arg)
 {
 	Oid databaseOid = DatumGetObjectId(arg);
 
@@ -239,14 +239,15 @@ CitusBackgroundTaskMonitorMain(Datum arg)
 		LockAcquire(&tag, AccessExclusiveLock, sessionLock, dontWait);
 	if (locked == LOCKACQUIRE_NOT_AVAIL)
 	{
-		ereport(ERROR, (errmsg("background task monitor already running for database")));
+		ereport(ERROR, (errmsg("background task queue monitor already running for "
+							   "database")));
 		exit(0);
 	}
 
 	/* make worker recognizable in pg_stat_activity */
-	pgstat_report_appname("citus background task monitor");
+	pgstat_report_appname("citus background task queue monitor");
 
-	ereport(LOG, (errmsg("citus background task monitor")));
+	ereport(DEBUG1, (errmsg("started citus background task queue monitor")));
 
 	/* TODO this is here for debugging purposses, remove before merge. */
 	if (BackgroundTaskMonitorDebugDelay)
@@ -305,7 +306,7 @@ CitusBackgroundTaskMonitorMain(Datum arg)
 			break;
 		}
 
-		/* we load the database name and username here as we are still in a transaciont */
+		/* we load the database name and username here as we are still in a transaction */
 		char *databaseName = get_database_name(MyDatabaseId);
 		char *userName = GetUserNameFromId(task->owner, false);
 
@@ -328,14 +329,15 @@ CitusBackgroundTaskMonitorMain(Datum arg)
 
 		if (handle == NULL)
 		{
-			/* TODO something better here */
-			ereport(ERROR, (errmsg("unable to start background worker")));
+			ereport(ERROR, (errmsg("unable to start background worker for background "
+								   "task execution")));
 		}
 
 		pid_t pid = 0;
 		GetBackgroundWorkerPid(handle, &pid);
 
-		ereport(LOG, (errmsg("found task with jobid: %ld", task->taskid)));
+		ereport(LOG, (errmsg("found task with jobid/taskid: %ld/%ld",
+							 task->jobid, task->taskid)));
 
 		StartTransactionCommand();
 		PushActiveSnapshot(GetTransactionSnapshot());
@@ -365,7 +367,6 @@ CitusBackgroundTaskMonitorMain(Datum arg)
 		}
 		task->message = NULL;
 
-		/* TODO keep polling the task */
 		while (GetBackgroundWorkerPid(handle, &pid) != BGWH_STOPPED)
 		{
 			int latchFlags = WL_LATCH_SET | WL_TIMEOUT | WL_POSTMASTER_DEATH;

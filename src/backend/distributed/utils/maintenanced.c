@@ -97,7 +97,7 @@ typedef struct MaintenanceDaemonDBData
 double DistributedDeadlockDetectionTimeoutFactor = 2.0;
 int Recover2PCInterval = 60000;
 int DeferShardDeleteInterval = 15000;
-int RebalanceCheckInterval = 1000;
+int BackgroundTaskQueueCheckInterval = 1000;
 
 /* config variables for metadata sync timeout */
 int MetadataSyncInterval = 60000;
@@ -287,8 +287,8 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 	TimestampTz nextMetadataSyncTime = 0;
 
 	/* state kept for the reabalance check */
-	TimestampTz lastRebalanceCheck = 0;
-	BackgroundWorkerHandle *rebalanceBgwHandle = NULL;
+	TimestampTz lastBackgroundTaskQueueCheck = 0;
+	BackgroundWorkerHandle *backgroundTasksQueueBgwHandle = NULL;
 
 	/*
 	 * We do metadata sync in a separate background worker. We need its
@@ -690,26 +690,32 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 			timeout = Min(timeout, (StatStatementsPurgeInterval * 1000));
 		}
 
-		pid_t rebalanceWorkerPid = 0;
-		BgwHandleStatus rebalanceWorkerStatus =
-			rebalanceBgwHandle != NULL ?
-			GetBackgroundWorkerPid(rebalanceBgwHandle, &rebalanceWorkerPid) :
+		pid_t backgroundTaskQueueWorkerPid = 0;
+		BgwHandleStatus backgroundTaskQueueWorkerStatus =
+			backgroundTasksQueueBgwHandle != NULL ? GetBackgroundWorkerPid(
+				backgroundTasksQueueBgwHandle, &backgroundTaskQueueWorkerPid) :
 			BGWH_STOPPED;
-		if (TimestampDifferenceExceeds(lastRebalanceCheck, GetCurrentTimestamp(),
-									   RebalanceCheckInterval) &&
-			rebalanceWorkerStatus == BGWH_STOPPED)
+		if (TimestampDifferenceExceeds(lastBackgroundTaskQueueCheck,
+									   GetCurrentTimestamp(),
+									   BackgroundTaskQueueCheckInterval) &&
+			backgroundTaskQueueWorkerStatus == BGWH_STOPPED)
 		{
-			/* clear old background worker for rebalancing before checking for new jobs */
-			if (rebalanceBgwHandle)
+			/*
+			 * TODO add spot check for lock acquisition to prevent multiple backends to
+			 * start simultaniously
+			 */
+
+			/* clear old background worker for task queue before checking for new tasks */
+			if (backgroundTasksQueueBgwHandle)
 			{
-				TerminateBackgroundWorker(rebalanceBgwHandle);
-				pfree(rebalanceBgwHandle);
-				rebalanceBgwHandle = NULL;
+				TerminateBackgroundWorker(backgroundTasksQueueBgwHandle);
+				pfree(backgroundTasksQueueBgwHandle);
+				backgroundTasksQueueBgwHandle = NULL;
 			}
 
 			StartTransactionCommand();
 
-			bool shouldStartRebalanceJobsBackgroundWorker = false;
+			bool shouldStartBackgroundTaskQueueBackgroundWorker = false;
 			if (!LockCitusExtension())
 			{
 				ereport(DEBUG1, (errmsg("could not lock the citus extension, "
@@ -718,35 +724,34 @@ CitusMaintenanceDaemonMain(Datum main_arg)
 			else if (CheckCitusVersion(DEBUG1) && CitusHasBeenLoaded())
 			{
 				/* perform catalog precheck */
-				shouldStartRebalanceJobsBackgroundWorker = HasRunnableBackgroundTask();
+				shouldStartBackgroundTaskQueueBackgroundWorker =
+					HasRunnableBackgroundTask();
 			}
 
 			CommitTransactionCommand();
 
-			if (shouldStartRebalanceJobsBackgroundWorker)
+			if (shouldStartBackgroundTaskQueueBackgroundWorker)
 			{
 				/* spawn background worker */
-				ereport(LOG, (errmsg("found scheduled job waiting for rebalance. "
-									 "Starting background worker for execution.")));
+				ereport(LOG, (errmsg("found scheduled background tasks, starting new "
+									 "background worker for execution")));
 
-				rebalanceBgwHandle =
-					StartCitusBackgroundTaskMonitorWorker(MyDatabaseId,
-														  myDbData->userOid);
+				backgroundTasksQueueBgwHandle =
+					StartCitusBackgroundTaskQueueMonitor(MyDatabaseId,
+														 myDbData->userOid);
 
-				if (!rebalanceBgwHandle ||
-					GetBackgroundWorkerPid(rebalanceBgwHandle, &rebalanceWorkerPid) ==
-					BGWH_STOPPED)
+				if (!backgroundTasksQueueBgwHandle ||
+					GetBackgroundWorkerPid(backgroundTasksQueueBgwHandle,
+										   &backgroundTaskQueueWorkerPid) == BGWH_STOPPED)
 				{
 					ereport(WARNING, (errmsg("unable to start background worker for "
-											 "rebalance jobs")));
-
-					/* todo cooldown timer */
+											 "background task execution")));
 				}
 			}
 
 			/* interval management */
-			lastRebalanceCheck = GetCurrentTimestamp();
-			timeout = Min(timeout, RebalanceCheckInterval);
+			lastBackgroundTaskQueueCheck = GetCurrentTimestamp();
+			timeout = Min(timeout, BackgroundTaskQueueCheckInterval);
 		}
 
 		/*
